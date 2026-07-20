@@ -51,7 +51,6 @@ export class MemberProfile implements OnInit, OnDestroy {
     this.memberService.updateMember(this.editableMember).subscribe({
       next: () => {
         const currentUser = this.accountService.currentUser();
-        console.log(currentUser);
         if (currentUser && updatedMember.displayName !== currentUser?.displayName) {
           currentUser.displayName = updatedMember.displayName;
           this.accountService.setCurrentUser(currentUser);
