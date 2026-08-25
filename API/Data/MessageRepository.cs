@@ -1,7 +1,9 @@
 ﻿using API.DTOs;
 using API.Entities;
+using API.Extensions;
 using API.Helpers;
 using API.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Data
 {
@@ -22,14 +24,37 @@ namespace API.Data
             return await context.Messages.FindAsync(messageId);
         }
 
-        public Task<PaginatedResult<MessageDto>> GetMessagesForMember()
+        public async Task<PaginatedResult<MessageDto>> GetMessagesForMember(MessageParams messageParams)
         {
-            throw new NotImplementedException();
+            var query = context.Messages
+                .OrderByDescending(x => x.MessageSent)
+                .AsQueryable();
+
+            query = messageParams.Container switch
+            {
+                "Outbox" => query.Where(x => x.SenderId == messageParams.MemberId),
+                _ => query.Where(x => x.RecipientId == messageParams.MemberId)
+            };
+
+            var messageQuery = query.Select(MessageExtensions.ToDtoProjection());
+
+            return await PaginationHelper.CreateAsync(messageQuery, messageParams.PageNumber, messageParams.PageSize);
         }
 
-        public Task<IReadOnlyList<MessageDto>> GetMessageThread(string currentMemberId, string recipientId)
+        public async Task<IReadOnlyList<MessageDto>> GetMessageThread(string currentMemberId, string recipientId)
         {
-            throw new NotImplementedException();
+            await context.Messages
+                .Where(x => x.RecipientId == currentMemberId
+                    && x.SenderId == recipientId && x.DateRead == null)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.DateRead, DateTime.UtcNow));
+
+            return await context.Messages
+                .Where(x => (x.RecipientId == currentMemberId && x.SenderId == recipientId)
+                    || (x.SenderId == currentMemberId && x.RecipientId == recipientId))
+                .OrderBy(x => x.MessageSent)
+                .Select(MessageExtensions.ToDtoProjection())
+                .ToListAsync();
         }
 
         public async Task<bool> SaveAllAsync()
