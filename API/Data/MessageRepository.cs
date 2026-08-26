@@ -1,4 +1,5 @@
-﻿using API.DTOs;
+﻿using System.Text.RegularExpressions;
+using API.DTOs;
 using API.Entities;
 using API.Extensions;
 using API.Helpers;
@@ -24,6 +25,13 @@ namespace API.Data
             return await context.Messages.FindAsync(messageId);
         }
 
+        //public async Task<Group?> GetMessageGroup(string groupName)
+        //{
+        //    return await context.Groups
+        //        .Include(x => x.Connections)
+        //        .FirstOrDefaultAsync(x => x.Name == groupName);
+        //}
+
         public async Task<PaginatedResult<MessageDto>> GetMessagesForMember(MessageParams messageParams)
         {
             var query = context.Messages
@@ -32,8 +40,10 @@ namespace API.Data
 
             query = messageParams.Container switch
             {
-                "Outbox" => query.Where(x => x.SenderId == messageParams.MemberId),
-                _ => query.Where(x => x.RecipientId == messageParams.MemberId)
+                "Outbox" => query.Where(x => x.SenderId == messageParams.MemberId 
+                    && x.SenderDeleted == false),
+                _ => query.Where(x => x.RecipientId == messageParams.MemberId 
+                    && x.RecipientDeleted == false)
             };
 
             var messageQuery = query.Select(MessageExtensions.ToDtoProjection());
@@ -50,8 +60,10 @@ namespace API.Data
                     .SetProperty(x => x.DateRead, DateTime.UtcNow));
 
             return await context.Messages
-                .Where(x => (x.RecipientId == currentMemberId && x.SenderId == recipientId)
-                    || (x.SenderId == currentMemberId && x.RecipientId == recipientId))
+                .Where(x => (x.RecipientId == currentMemberId && x.RecipientDeleted == false 
+                    && x.SenderId == recipientId)
+                    || (x.SenderId == currentMemberId && x.SenderDeleted == false 
+                    && x.RecipientId == recipientId))
                 .OrderBy(x => x.MessageSent)
                 .Select(MessageExtensions.ToDtoProjection())
                 .ToListAsync();

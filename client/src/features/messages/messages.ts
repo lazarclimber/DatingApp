@@ -2,8 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { MessageService } from '../../core/services/message-service';
 import { PaginatedResult } from '../../types/pagination';
 import { Message } from '../../types/message';
-import { Paginator } from "../../shared/paginator/paginator";
-import { RouterLink } from "@angular/router";
+import { Paginator } from '../../shared/paginator/paginator';
+import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 
 @Component({
@@ -19,11 +19,11 @@ export class Messages implements OnInit {
   protected pageNumber = 1;
   protected pageSize = 10;
   protected paginatedMessages = signal<PaginatedResult<Message> | null>(null);
-  
+
   tabs = [
-    {label: 'Inbox', value: 'Inbox'},
-    {label: 'Outbox', value: 'Outbox'},
-  ]
+    { label: 'Inbox', value: 'Inbox' },
+    { label: 'Outbox', value: 'Outbox' },
+  ];
 
   ngOnInit(): void {
     this.loadMessages();
@@ -31,11 +31,19 @@ export class Messages implements OnInit {
 
   loadMessages() {
     this.messageService.getMessages(this.container, this.pageNumber, this.pageSize).subscribe({
-      next: response => {
-        this.paginatedMessages.set(response)
+      next: (response) => {
+        this.paginatedMessages.set(response);
         this.fetchedContainer = this.container;
-      }
-    })
+      },
+    });
+  }
+
+  deleteMessage(event: Event, id: string) {
+    event.stopPropagation();
+
+    this.messageService.deleteMessage(id).subscribe({
+      next: () => this.loadMessages(),
+    });
   }
 
   get isInbox() {
