@@ -24,16 +24,13 @@ namespace API.Data
 
             foreach (var member in members)
             {
-                using var hmac = new HMACSHA512();
-
                 var user = new AppUser
                 {
                     Id = member.Id,
                     Email = member.Email,
+                    UserName = member.Email,
                     DisplayName = member.DisplayName,
                     ImageUrl = member.ImageUrl,
-                    PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes("Pa$$w0rd")),
-                    PasswordSalt = hmac.Key,
                     Member = new Member
                     {
                         Id = member.Id,
