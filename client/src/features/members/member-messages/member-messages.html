@@ -6,9 +6,14 @@
         [class.chat-start]="!message.currentUserSender"
         [class.chat-end]="message.currentUserSender"
       >
-        <div class="chat-image avatar">
+        <div
+          class="chat-image avatar"
+          [class.avatar-online]="
+            presenceService.onlineUsers().includes(message.senderId || message.recipientId)
+          "
+        >
           <div class="w-10 rounded-full">
-            <img alt="user image" [src]="message.senderImageUrl" />
+            <img alt="user image" [src]="message.senderImageUrl || '/user.png'" />
           </div>
         </div>
         <div class="chat-header">
@@ -25,7 +30,7 @@
         }
       </div>
     }
-		<div #messageEndRef></div>
+    <div #messageEndRef></div>
   </div>
 
   <div class="flex join w-full">
@@ -35,8 +40,6 @@
       placeholder="Enter your message"
       (keydown.enter)="sendMessage()"
     />
-		<button (click)="sendMessage()" type="submit" class="btn btn-primary join-item">
-			Send
-		</button>
+    <button (click)="sendMessage()" type="submit" class="btn btn-primary join-item">Send</button>
   </div>
 </div>
